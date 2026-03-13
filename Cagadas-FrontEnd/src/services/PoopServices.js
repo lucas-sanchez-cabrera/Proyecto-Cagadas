@@ -46,3 +46,13 @@ export async function getYearAllPoops() {
   }
 }
 
+export async function getClassificationPoints() {
+  try {
+    const response = await axios.get(backendPoopEndpoint + "/classification");
+    return response;
+  } catch (err) {
+    console.error("Get classification points error:", err);
+    throw err;
+  }
+}
+

@@ -4,6 +4,8 @@ import Login from "../pages/Login.vue";
 import Home from "../pages/Home.vue";
 import UserSetting from "../pages/UserSetting.vue";
 import Register from "../pages/Register.vue";
+import ChangePassword from "../pages/ChangePassword.vue";
+import Classification from "../pages/Classification.vue";
 
 // ---- Simulación de autenticación ----
 const isAuthenticated = () => {
@@ -38,6 +40,18 @@ const routes = [
     path: "/user-setting",
     component: UserSetting,
     meta: { requiresAuth: true, title: "User Setting" },
+  },
+
+  {
+    path: "/change-password",
+    component: ChangePassword,
+    meta: { requiresAuth: true, title: "Cambiar contraseña" },
+  },
+
+  {
+    path: "/classification",
+    component: Classification,
+    meta: { requiresAuth: true, title: "Clasificación" },
   },
 
   {

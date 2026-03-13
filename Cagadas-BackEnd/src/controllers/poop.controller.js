@@ -1,5 +1,8 @@
 import { dbModels } from "../models/index.js";
 
+const COOLDOWN_MINUTES = 10;
+const COOLDOWN_MS = COOLDOWN_MINUTES * 60 * 1000;
+
 export const createPoop = async (req, res) => {
   try {
     const { userId } = req.body;
@@ -16,6 +19,24 @@ export const createPoop = async (req, res) => {
       return res.status(404).json({
         message: "User not found",
       });
+    }
+
+    // Comprobar cooldown: última cagada del usuario hace menos de 10 min
+    const lastPoop = await dbModels.Poops.findOne({ "user._id": userId })
+      .sort({ date: -1 })
+      .lean();
+
+    if (lastPoop) {
+      const lastDate = new Date(lastPoop.date).getTime();
+      const elapsed = Date.now() - lastDate;
+      if (elapsed < COOLDOWN_MS) {
+        const cooldownEndsAt = new Date(lastDate + COOLDOWN_MS);
+        return res.status(429).json({
+          message: `Debes esperar ${COOLDOWN_MINUTES} minutos entre cagadas. Podrás registrar de nuevo a las ${cooldownEndsAt.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}.`,
+          cooldownEndsAt: cooldownEndsAt.toISOString(),
+          remainingSeconds: Math.ceil((COOLDOWN_MS - elapsed) / 1000),
+        });
+      }
     }
 
     console.log("User found:", user.firstName, user.lastName);
@@ -35,9 +56,12 @@ export const createPoop = async (req, res) => {
 
     console.log("Poop saved with user info:", JSON.stringify(newPoop, null, 2));
 
+    const cooldownEndsAt = new Date(Date.now() + COOLDOWN_MS);
+
     return res.status(201).json({
       message: "Poop created successfully",
       poop: newPoop,
+      cooldownEndsAt: cooldownEndsAt.toISOString(),
     });
   } catch (error) {
     console.error("Error creating poop:", error);
@@ -293,6 +317,91 @@ export const getYearAllPoops = async (req, res) => {
     });
   } catch (err) {
     console.error("Error en getYearAllPoops:", err);
+    return res.status(500).json({
+      message: "Internal server error",
+      error: err.message,
+    });
+  }
+};
+
+/**
+ * Obtiene la clasificación por puntos: 1 punto por ganar la semana, 0.5 por empate.
+ * Se reinicia todos los lunes a las 00:00 (solo se cuentan puntos de la semana actual).
+ */
+export const getClassificationPoints = async (req, res) => {
+  try {
+    const now = new Date();
+    // Inicio de la semana actual: lunes 00:00:00
+    const currentDay = now.getDay(); // 0=Dom, 1=Lun, ...
+    const toMonday = currentDay === 0 ? -6 : 1 - currentDay;
+    const startOfCurrentWeek = new Date(now);
+    startOfCurrentWeek.setDate(now.getDate() + toMonday);
+    startOfCurrentWeek.setHours(0, 0, 0, 0);
+
+    const allPoops = await dbModels.Poops.find({
+      date: { $gte: startOfCurrentWeek },
+    }).lean();
+
+    // Agrupar por semana (lunes a domingo). key = fecha del lunes YYYY-MM-DD
+    const getWeekKey = (date) => {
+      const d = new Date(date);
+      const day = d.getDay(); // 0=Dom, 1=Lun, ...
+      const toMonday = day === 0 ? -6 : 1 - day;
+      const monday = new Date(d);
+      monday.setDate(d.getDate() + toMonday);
+      monday.setHours(0, 0, 0, 0);
+      return monday.toISOString().slice(0, 10); // "YYYY-MM-DD"
+    };
+
+    const poopsByWeek = {};
+    for (const poop of allPoops) {
+      const key = getWeekKey(poop.date);
+      if (!poopsByWeek[key]) poopsByWeek[key] = [];
+      poopsByWeek[key].push(poop);
+    }
+
+    const pointsByUser = new Map();
+
+    for (const weekKey of Object.keys(poopsByWeek)) {
+      const poops = poopsByWeek[weekKey];
+      const countByUser = new Map();
+      for (const p of poops) {
+        const uid = p.user._id.toString();
+        countByUser.set(uid, (countByUser.get(uid) || 0) + 1);
+      }
+      if (countByUser.size === 0) continue;
+      const maxCount = Math.max(...countByUser.values());
+      const winners = [...countByUser.entries()].filter(([, c]) => c === maxCount);
+      const pointEach = winners.length > 1 ? 0.5 : 1;
+      for (const [uid] of winners) {
+        const userEntry = poops.find((p) => p.user._id.toString() === uid)?.user;
+        if (!pointsByUser.has(uid)) {
+          pointsByUser.set(uid, { user: userEntry, points: 0 });
+        }
+        pointsByUser.get(uid).points += pointEach;
+      }
+    }
+
+    // Incluir todos los usuarios, aunque tengan 0 puntos
+    const allUsers = await dbModels.Users.find()
+      .select("_id firstName lastName")
+      .lean();
+
+    const classification = allUsers
+      .map((u) => ({
+        user: { _id: u._id, firstName: u.firstName, lastName: u.lastName },
+        points: pointsByUser.has(u._id.toString())
+          ? pointsByUser.get(u._id.toString()).points
+          : 0,
+      }))
+      .sort((a, b) => b.points - a.points);
+
+    return res.status(200).json({
+      classification,
+      message: classification.length === 0 ? "No hay clasificación aún" : undefined,
+    });
+  } catch (err) {
+    console.error("Error en getClassificationPoints:", err);
     return res.status(500).json({
       message: "Internal server error",
       error: err.message,

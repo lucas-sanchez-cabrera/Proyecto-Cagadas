@@ -30,4 +30,38 @@ async function login(user) {
   }
 }
 
-export { login };
+async function register(user) {
+  try {
+    console.log("Attempting registration with:", user.email);
+    const response = await axios.post(
+      backendAuthEndpoint,
+      {
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        password: user.password,
+      },
+      { withCredentials: true }
+    );
+    return response;
+  } catch (err) {
+    console.error("Registration error:", err);
+    throw err;
+  }
+}
+
+async function updateUser(userId, data) {
+  try {
+    const response = await axios.put(
+      `${backendAuthEndpoint}/${userId}`,
+      data,
+      { withCredentials: true }
+    );
+    return response;
+  } catch (err) {
+    console.error("Update user error:", err);
+    throw err;
+  }
+}
+
+export { login, register, updateUser };
