@@ -9,8 +9,13 @@ export const createUser = async (req, res) => {
     // Validar que todos los campos requeridos estén presentes
     if (!firstName || !lastName || !email || !password) {
       return res.status(400).json({
-        message:
-          "Todos los campos son requeridos: firstName, lastName, email, password",
+        message: "Todos los campos son requeridos: firstName, lastName, email, password",
+      });
+    }
+
+    if (password.length < 6) {
+      return res.status(400).json({
+        message: "La contraseña debe tener al menos 6 caracteres",
       });
     }
 
@@ -19,13 +24,6 @@ export const createUser = async (req, res) => {
     if (!emailRegex.test(email)) {
       return res.status(400).json({
         message: "Por favor ingrese un email válido",
-      });
-    }
-
-    // Validar longitud de contraseña
-    if (password.length < 6) {
-      return res.status(400).json({
-        message: "La contraseña debe tener al menos 6 caracteres",
       });
     }
 
@@ -47,7 +45,6 @@ export const createUser = async (req, res) => {
     const user = new User(newUser);
     await user.save();
 
-    // Enviar respuesta sin incluir la contraseña
     const userResponse = {
       _id: user._id,
       firstName: user.firstName,
@@ -56,7 +53,7 @@ export const createUser = async (req, res) => {
     };
 
     res.status(201).json({
-      message: `El usuario con el email ${email} se ha creado correctamente`,
+      message: `El usuario con el email ${email} se ha creado correctamente.`,
       user: userResponse,
     });
   } catch (error) {

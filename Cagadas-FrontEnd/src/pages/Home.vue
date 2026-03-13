@@ -6,8 +6,20 @@
       <h1 class="title">Cagadas {{ user.firstName }}</h1>
     </div>
 
-    <!-- Botón principal "He Cagado" -->
-    <button class="main-button" @click="registrarCagada">💩 +1</button>
+    <!-- Botón principal "He Cagado" (con cooldown 10 min) -->
+    <button
+      class="main-button"
+      :class="{ 'main-button--cooldown': cooldownRemaining > 0 }"
+      :disabled="cooldownRemaining > 0"
+      @click="registrarCagada"
+    >
+      <template v-if="cooldownRemaining > 0">
+        ⏱️ Espera {{ cooldownText }}
+      </template>
+      <template v-else>
+        💩 +1
+      </template>
+    </button>
 
     <!-- Sección de gráficas semanales -->
     <div class="section">
@@ -138,6 +150,10 @@
       </div>
     </div>
 
+    <!-- Link a clasificación -->
+    <router-link to="/classification" class="classification-link">
+      🏆 Clasificación
+    </router-link>
     <!-- Link a configuración -->
     <router-link to="/user-setting" class="settings-link">
       ⚙️ Configuración
@@ -150,7 +166,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, onUnmounted } from "vue";
 import { Bar, Pie } from "vue-chartjs";
 import {
   Chart as ChartJS,
@@ -172,6 +188,58 @@ import {
 } from "../services/PoopServices";
 
 const user = JSON.parse(localStorage.getItem("user"));
+
+const COOLDOWN_STORAGE_KEY = `poopCooldown_${user?._id}`;
+const COOLDOWN_MINUTES = 10;
+
+// Cooldown: timestamp (ms) hasta cuando no puede registrar de nuevo
+const cooldownEndsAt = ref(null);
+const cooldownRemaining = ref(0); // segundos restantes (se actualiza con timer)
+
+const cooldownText = computed(() => {
+  const s = cooldownRemaining.value;
+  if (s <= 0) return "";
+  const min = Math.floor(s / 60);
+  const sec = s % 60;
+  if (min > 0) return `${min} min ${sec} s`;
+  return `${sec} s`;
+});
+
+let cooldownTimer = null;
+
+function updateCooldownRemaining() {
+  if (!cooldownEndsAt.value) {
+    cooldownRemaining.value = 0;
+    return;
+  }
+  const remaining = Math.ceil((cooldownEndsAt.value - Date.now()) / 1000);
+  if (remaining <= 0) {
+    cooldownEndsAt.value = null;
+    cooldownRemaining.value = 0;
+    try {
+      localStorage.removeItem(COOLDOWN_STORAGE_KEY);
+    } catch (_) {}
+    if (cooldownTimer) {
+      clearInterval(cooldownTimer);
+      cooldownTimer = null;
+    }
+  } else {
+    cooldownRemaining.value = remaining;
+  }
+}
+
+function setCooldown(isoDateOrMs) {
+  const end = typeof isoDateOrMs === "string" ? new Date(isoDateOrMs).getTime() : isoDateOrMs;
+  if (end <= Date.now()) return;
+  cooldownEndsAt.value = end;
+  cooldownRemaining.value = Math.ceil((end - Date.now()) / 1000);
+  try {
+    localStorage.setItem(COOLDOWN_STORAGE_KEY, String(end));
+  } catch (_) {}
+  if (!cooldownTimer) {
+    cooldownTimer = setInterval(updateCooldownRemaining, 1000);
+  }
+}
 
 // Registrar componentes de Chart.js
 ChartJS.register(
@@ -368,31 +436,35 @@ const promedioMensual = computed(() => {
 const loadWeekData = async () => {
   try {
     const response = await getWeekAllPoops();
-    const stats = response.data.stats;
-    const history = response.data.history;
-    console.log("Week stats:", stats);
-    console.log("Week history:", history);
+    const stats = response.data.stats ?? [];
+    const history = response.data.history ?? [];
 
-    if (stats && stats.length > 0) {
-      // Poblar gráfica circular
-      weeklyPieData.value.labels = stats.map(
-        (stat) => `${stat.user.firstName}`
-      );
-      weeklyPieData.value.datasets[0].data = stats.map((stat) => stat.count);
-      weeklyPieData.value.datasets[0].backgroundColor = stats.map(
-        (_, index) => colors[index % colors.length]
-      );
-
-      // Poblar gráfica de barras (Un dataset por usuario para poder filtrar en la leyenda)
-      weeklyBarData.value.labels = ["Total Semanal"]; // Una sola etiqueta en el eje X
-      weeklyBarData.value.datasets = stats.map((stat, index) => ({
-        label: `${stat.user.firstName}`,
-        data: [stat.count],
-        backgroundColor: colors[index % colors.length],
-        borderColor: "#8c6647",
-        borderWidth: 1,
-        borderRadius: 8,
-      }));
+    if (stats.length > 0) {
+      weeklyPieData.value = {
+        labels: stats.map((stat) => `${stat.user.firstName}`),
+        datasets: [
+          {
+            data: stats.map((stat) => stat.count),
+            backgroundColor: stats.map((_, i) => colors[i % colors.length]),
+            borderColor: "#fffdfb",
+            borderWidth: 3,
+          },
+        ],
+      };
+      weeklyBarData.value = {
+        labels: ["Total Semanal"],
+        datasets: stats.map((stat, index) => ({
+          label: `${stat.user.firstName}`,
+          data: [stat.count],
+          backgroundColor: colors[index % colors.length],
+          borderColor: "#8c6647",
+          borderWidth: 1,
+          borderRadius: 8,
+        })),
+      };
+    } else {
+      weeklyPieData.value = { labels: [], datasets: [{ data: [], backgroundColor: [], borderColor: "#fffdfb", borderWidth: 3 }] };
+      weeklyBarData.value = { labels: [], datasets: [] };
     }
   } catch (error) {
     console.error("Error loading week data:", error);
@@ -403,32 +475,35 @@ const loadWeekData = async () => {
 const loadMonthData = async () => {
   try {
     const response = await getMonthAllPoops();
-    const stats = response.data.stats;
-    const history = response.data.history;
+    const stats = response.data.stats ?? [];
+    const history = response.data.history ?? [];
 
-    console.log("Month stats:", stats);
-    console.log("Month history:", history);
-
-    if (stats && stats.length > 0) {
-      // Poblar gráfica circular
-      monthlyPieData.value.labels = stats.map(
-        (stat) => `${stat.user.firstName}`
-      );
-      monthlyPieData.value.datasets[0].data = stats.map((stat) => stat.count);
-      monthlyPieData.value.datasets[0].backgroundColor = stats.map(
-        (_, index) => colors[index % colors.length]
-      );
-
-      // Poblar gráfica de barras (Un dataset por usuario)
-      monthlyBarData.value.labels = ["Total Mensual"];
-      monthlyBarData.value.datasets = stats.map((stat, index) => ({
-        label: `${stat.user.firstName}`,
-        data: [stat.count],
-        backgroundColor: colors[index % colors.length],
-        borderColor: "#8c6647",
-        borderWidth: 1,
-        borderRadius: 8,
-      }));
+    if (stats.length > 0) {
+      monthlyPieData.value = {
+        labels: stats.map((stat) => `${stat.user.firstName}`),
+        datasets: [
+          {
+            data: stats.map((stat) => stat.count),
+            backgroundColor: stats.map((_, i) => colors[i % colors.length]),
+            borderColor: "#fffdfb",
+            borderWidth: 3,
+          },
+        ],
+      };
+      monthlyBarData.value = {
+        labels: ["Total Mensual"],
+        datasets: stats.map((stat, index) => ({
+          label: `${stat.user.firstName}`,
+          data: [stat.count],
+          backgroundColor: colors[index % colors.length],
+          borderColor: "#8c6647",
+          borderWidth: 1,
+          borderRadius: 8,
+        })),
+      };
+    } else {
+      monthlyPieData.value = { labels: [], datasets: [{ data: [], backgroundColor: [], borderColor: "#fffdfb", borderWidth: 3 }] };
+      monthlyBarData.value = { labels: [], datasets: [] };
     }
   } catch (error) {
     console.error("Error loading month data:", error);
@@ -439,53 +514,21 @@ const loadMonthData = async () => {
 const loadYearData = async () => {
   try {
     const response = await getYearAllPoops();
-    const stats = response.data.stats;
-    const history = response.data.history;
+    const stats = response.data.stats ?? [];
+    const history = response.data.history ?? [];
 
-    console.log("Year stats:", stats);
-    console.log("Year history:", history);
-
-    if (stats && stats.length > 0) {
-      // Poblar gráfica circular (Total por usuario)
-      yearlyPieData.value.labels = stats.map(
-        (stat) => `${stat.user.firstName}`
-      );
-      yearlyPieData.value.datasets[0].data = stats.map((stat) => stat.count);
-      yearlyPieData.value.datasets[0].backgroundColor = stats.map(
-        (_, index) => colors[index % colors.length]
-      );
-
-      // Poblar gráfica de barras (Desglose por meses y por usuario)
+    if (stats.length > 0) {
       const months = [
-        "Enero",
-        "Febrero",
-        "Marzo",
-        "Abril",
-        "Mayo",
-        "Junio",
-        "Julio",
-        "Agosto",
-        "Septiembre",
-        "Octubre",
-        "Noviembre",
-        "Diciembre",
+        "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+        "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre",
       ];
-
-      // Crear un dataset por cada usuario
       const datasets = stats.map((stat, index) => {
-        // Inicializar array de 12 meses en 0
         const monthlyCounts = new Array(12).fill(0);
-
-        // Filtrar el historial para este usuario y contar por mes
-        const userPoops = history.filter(
-          (poop) => poop.user._id === stat.user._id
-        );
+        const userPoops = history.filter((poop) => poop.user._id === stat.user._id);
         userPoops.forEach((poop) => {
-          const date = new Date(poop.date);
-          const monthIndex = date.getMonth();
+          const monthIndex = new Date(poop.date).getMonth();
           monthlyCounts[monthIndex]++;
         });
-
         return {
           label: `${stat.user.firstName} ${stat.user.lastName}`,
           data: monthlyCounts,
@@ -496,8 +539,19 @@ const loadYearData = async () => {
         };
       });
 
-      yearlyBarData.value.labels = months;
-      yearlyBarData.value.datasets = datasets;
+      yearlyPieData.value = {
+        labels: stats.map((stat) => `${stat.user.firstName}`),
+        datasets: [{
+          data: stats.map((stat) => stat.count),
+          backgroundColor: stats.map((_, i) => colors[i % colors.length]),
+          borderColor: "#fffdfb",
+          borderWidth: 3,
+        }],
+      };
+      yearlyBarData.value = { labels: months, datasets };
+    } else {
+      yearlyPieData.value = { labels: [], datasets: [{ data: [], backgroundColor: [], borderColor: "#fffdfb", borderWidth: 3 }] };
+      yearlyBarData.value = { labels: [], datasets: [] };
     }
   } catch (error) {
     console.error("Error loading year data:", error);
@@ -512,21 +566,44 @@ const logOut = () => {
 
 // Función para registrar nueva cagada
 const registrarCagada = async () => {
+  if (cooldownRemaining.value > 0) return;
   try {
-    await createPoop(user._id);
+    const response = await createPoop(user._id);
+    const endsAt = response?.data?.cooldownEndsAt;
+    if (endsAt) setCooldown(endsAt);
     alert("¡Te marcaste un perfect! 💩");
-    window.location.reload();
+    await loadWeekData();
+    await loadMonthData();
+    await loadYearData();
   } catch (error) {
     console.error(error);
-    alert("Las has cagado, algo salió mal 😅");
+    const data = error.response?.data;
+    if (error.response?.status === 429 && data?.cooldownEndsAt) {
+      setCooldown(data.cooldownEndsAt);
+      alert(data.message || "Debes esperar 10 minutos entre cagadas.");
+    } else {
+      alert("Las has cagado, algo salió mal 😅");
+    }
   }
 };
 
-// Cargar datos al montar el componente
+// Cargar datos al montar el componente e iniciar cooldown si hay uno guardado
 onMounted(async () => {
+  try {
+    const stored = localStorage.getItem(COOLDOWN_STORAGE_KEY);
+    if (stored) {
+      const end = parseInt(stored, 10);
+      if (end > Date.now()) setCooldown(end);
+      else updateCooldownRemaining();
+    }
+  } catch (_) {}
   await loadWeekData();
   await loadMonthData();
   await loadYearData();
+});
+
+onUnmounted(() => {
+  if (cooldownTimer) clearInterval(cooldownTimer);
 });
 </script>
 
@@ -575,6 +652,19 @@ onMounted(async () => {
 
 .main-button:active {
   transform: translateY(0);
+}
+
+.main-button:disabled,
+.main-button--cooldown {
+  opacity: 0.85;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.main-button:disabled:hover,
+.main-button--cooldown:hover {
+  transform: none;
+  box-shadow: 0 4px 12px rgba(166, 123, 91, 0.3);
 }
 
 /* Secciones */
@@ -637,6 +727,27 @@ onMounted(async () => {
   font-weight: 500;
 }
 
+/* Link de clasificación */
+.classification-link {
+  display: block;
+  text-align: center;
+  padding: 14px;
+  background: #fffdfb;
+  color: #5a4331;
+  text-decoration: none;
+  border-radius: 12px;
+  font-weight: 600;
+  border: 1px solid #e6d5c3;
+  transition: all 0.3s ease;
+  margin-top: 24px;
+}
+
+.classification-link:hover {
+  background: #faf5f0;
+  transform: translateY(-1px);
+  box-shadow: rgba(60, 40, 20, 0.1) 0px 4px 8px;
+}
+
 /* Link de configuración */
 .settings-link {
   display: block;
@@ -649,7 +760,7 @@ onMounted(async () => {
   font-weight: 600;
   border: 1px solid #e6d5c3;
   transition: all 0.3s ease;
-  margin-top: 24px;
+  margin-top: 12px;
 }
 
 .settings-link:hover {

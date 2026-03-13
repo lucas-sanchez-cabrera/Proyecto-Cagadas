@@ -3,12 +3,34 @@
     <div class="login-card">
       <CacaIcon size="50" />
       <h2 class="title">Registrarse</h2>
-      
+
       <p class="info-text">
-        Introduce tu email para solicitar una cuenta. Mandaremos un correo con tu contraseña provicional.
+        Introduce tus datos para crear una cuenta.
       </p>
 
       <form @submit.prevent="handleRegister">
+        <div class="input-group">
+          <label>Nombre</label>
+          <input
+            type="text"
+            v-model="firstName"
+            placeholder="Introduce tu nombre"
+            required
+            :disabled="isLoading"
+          />
+        </div>
+
+        <div class="input-group">
+          <label>Apellidos</label>
+          <input
+            type="text"
+            v-model="lastName"
+            placeholder="Introduce tus apellidos"
+            required
+            :disabled="isLoading"
+          />
+        </div>
+
         <div class="input-group">
           <label>Email</label>
           <input
@@ -16,6 +38,18 @@
             v-model="email"
             placeholder="Introduce tu email"
             required
+            :disabled="isLoading"
+          />
+        </div>
+
+        <div class="input-group">
+          <label>Contraseña</label>
+          <input
+            type="password"
+            v-model="password"
+            placeholder="Introduce tu contraseña"
+            required
+            minlength="6"
             :disabled="isLoading"
           />
         </div>
@@ -34,21 +68,56 @@
 
 <script setup>
 import { ref } from "vue";
+import { useRouter } from "vue-router";
 import CacaIcon from "../icons/CacaIcon.vue";
+import { register } from "../services/UserServices";
 
+const router = useRouter();
+const firstName = ref("");
+const lastName = ref("");
 const email = ref("");
+const password = ref("");
 const isLoading = ref(false);
 
 const handleRegister = async () => {
-  // Lógica de registro pendiente
   isLoading.value = true;
-  console.log("Registrando email:", email.value);
 
-  // Simulación de proceso
-  setTimeout(() => {
+  try {
+    const user = {
+      firstName: firstName.value,
+      lastName: lastName.value,
+      email: email.value,
+      password: password.value,
+    };
+
+    console.log("Registrando usuario:", user);
+    const response = await register(user);
+
+    console.log("Registro exitoso:", response.data);
+    alert("¡Registro exitoso! Ya puedes iniciar sesión.");
+
+    // Redirigir al login después del registro exitoso
+    router.push("/login");
+  } catch (error) {
+    console.error("Error en el registro:", error);
+
+    if (error.response) {
+      // El servidor respondió con un error
+      alert(
+        `Error: ${
+          error.response.data.message || "No se pudo completar el registro"
+        }`
+      );
+    } else if (error.request) {
+      // La petición se hizo pero no hubo respuesta
+      alert("Error: No se pudo conectar con el servidor");
+    } else {
+      // Algo pasó al configurar la petición
+      alert("Error: " + error.message);
+    }
+  } finally {
     isLoading.value = false;
-    alert("Solicitud enviada (Simulación)");
-  }, 1000);
+  }
 };
 </script>
 
@@ -87,12 +156,12 @@ const handleRegister = async () => {
 }
 
 .info-text {
-  width: 100%; text-align: center;
+  width: 100%;
+  text-align: center;
   color: #5a4331;
   margin-bottom: 25px;
   font-size: 0.95rem;
   line-height: 1.5;
-
 }
 
 .input-group {

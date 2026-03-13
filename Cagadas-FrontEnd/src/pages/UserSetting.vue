@@ -13,10 +13,12 @@
         <div class="input-group">
           <label>Nombre</label>
           <input
+            ref="inputNombre"
             type="text"
-            v-model="nombre"
             placeholder="Tu nombre"
             required
+            dir="ltr"
+            autocomplete="name"
           />
         </div>
 
@@ -24,10 +26,12 @@
         <div class="input-group">
           <label>Apellidos</label>
           <input
+            ref="inputApellidos"
             type="text"
-            v-model="apellidos"
             placeholder="Tus apellidos"
             required
+            dir="ltr"
+            autocomplete="family-name"
           />
         </div>
 
@@ -35,163 +39,78 @@
         <div class="input-group">
           <label>Correo electrónico</label>
           <input
+            ref="inputCorreo"
             type="email"
-            v-model="correo"
             placeholder="tu@email.com"
             required
+            dir="ltr"
+            autocomplete="email"
           />
         </div>
 
-        <!-- Contraseña actual -->
+        <!-- Botón nueva contraseña -->
         <div class="input-group">
-          <label>Contraseña actual</label>
-          <div class="password-wrapper">
-            <input
-              :type="mostrarPasswordActual ? 'text' : 'password'"
-              v-model="passwordActual"
-              placeholder="Tu contraseña actual"
-            />
-            <button
-              type="button"
-              class="toggle-password"
-              @click="mostrarPasswordActual = !mostrarPasswordActual"
-              :aria-label="
-                mostrarPasswordActual
-                  ? 'Ocultar contraseña'
-                  : 'Mostrar contraseña'
-              "
-            >
-              <svg
-                v-if="mostrarPasswordActual"
-                xmlns="http://www.w3.org/2000/svg"
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              >
-                <!-- Ojo abierto -->
-                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                <circle cx="12" cy="12" r="3"></circle>
-              </svg>
-              <svg
-                v-else
-                xmlns="http://www.w3.org/2000/svg"
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              >
-                <!-- Ojo cerrado con línea -->
-                <path
-                  d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"
-                ></path>
-                <line x1="1" y1="1" x2="23" y2="23"></line>
-              </svg>
-            </button>
-          </div>
-        </div>
-
-        <!-- Nueva contraseña -->
-        <div class="input-group">
-          <label>Nueva contraseña (opcional)</label>
-          <div class="password-wrapper">
-            <input
-              :type="mostrarPasswordNueva ? 'text' : 'password'"
-              v-model="passwordNueva"
-              placeholder="Dejar en blanco para no cambiar"
-            />
-            <button
-              type="button"
-              class="toggle-password"
-              @click="mostrarPasswordNueva = !mostrarPasswordNueva"
-              :aria-label="
-                mostrarPasswordNueva
-                  ? 'Ocultar contraseña'
-                  : 'Mostrar contraseña'
-              "
-            >
-              <svg
-                v-if="mostrarPasswordNueva"
-                xmlns="http://www.w3.org/2000/svg"
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              >
-                <!-- Ojo abierto -->
-                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                <circle cx="12" cy="12" r="3"></circle>
-              </svg>
-              <svg
-                v-else
-                xmlns="http://www.w3.org/2000/svg"
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              >
-                <!-- Ojo cerrado con línea -->
-                <path
-                  d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"
-                ></path>
-                <line x1="1" y1="1" x2="23" y2="23"></line>
-              </svg>
-            </button>
-          </div>
-          <p class="hint">
-            Deja este campo vacío si no deseas cambiar tu contraseña
-          </p>
+          <router-link to="/change-password" class="change-password-button">
+            Nueva contraseña
+          </router-link>
         </div>
 
         <!-- Botón guardar -->
-        <button type="submit" class="save-button">Guardar cambios</button>
+        <button type="submit" class="save-button" :disabled="isLoading">
+          {{ isLoading ? "Guardando..." : "Guardar cambios" }}
+        </button>
       </form>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref } from "vue";
+import { ref, onMounted } from "vue";
+import { updateUser } from "../services/UserServices";
 
 // Datos del usuario
-const nombre = ref("");
-const apellidos = ref("");
-const correo = ref("");
-const passwordActual = ref("");
-const passwordNueva = ref("");
 const user = JSON.parse(localStorage.getItem("user"));
+const inputNombre = ref(null);
+const inputApellidos = ref(null);
+const inputCorreo = ref(null);
+const isLoading = ref(false);
 
-// Estados de visibilidad de contraseñas
-const mostrarPasswordActual = ref(false);
-const mostrarPasswordNueva = ref(false);
+// Valores iniciales: el navegador controla el input (no Vue), así no se escribe al revés
+onMounted(() => {
+  if (inputNombre.value) inputNombre.value.value = user?.firstName ?? "";
+  if (inputApellidos.value) inputApellidos.value.value = user?.lastName ?? "";
+  if (inputCorreo.value) inputCorreo.value.value = user?.email ?? "";
+});
 
 // Función para guardar cambios
-const guardarCambios = () => {
-  console.log("Guardando cambios...");
-  console.log("Nombre:", nombre.value);
-  console.log("Apellidos:", apellidos.value);
-  console.log("Correo:", correo.value);
-  console.log("Password actual:", passwordActual.value);
-  console.log("Password nueva:", passwordNueva.value);
+const guardarCambios = async () => {
+  if (!user?._id) {
+    alert("No se ha encontrado la sesión. Inicia sesión de nuevo.");
+    return;
+  }
 
-  // Aquí iría la lógica para enviar los datos al backend
-  alert("Cambios guardados correctamente");
+  const firstName = inputNombre.value?.value?.trim() ?? "";
+  const lastName = inputApellidos.value?.value?.trim() ?? "";
+  const email = inputCorreo.value?.value?.trim().toLowerCase() ?? "";
+
+  isLoading.value = true;
+
+  try {
+    const response = await updateUser(user._id, {
+      firstName,
+      lastName,
+      email,
+    });
+
+    const updatedUser = { ...user, ...response.data.user };
+    localStorage.setItem("user", JSON.stringify(updatedUser));
+    alert("Cambios guardados correctamente");
+  } catch (err) {
+    const msg = err.response?.data?.message || "No se pudieron guardar los cambios.";
+    alert(`Error: ${msg}`);
+  } finally {
+    isLoading.value = false;
+  }
 };
 </script>
 
@@ -262,6 +181,7 @@ const guardarCambios = () => {
   outline: none;
   transition: 0.25s;
   font-size: 16px;
+  direction: ltr;
 }
 
 .input-group input:focus {
@@ -269,48 +189,28 @@ const guardarCambios = () => {
   box-shadow: 0 0 4px rgba(166, 123, 91, 0.4);
 }
 
-/* Wrapper para contraseña con icono */
-.password-wrapper {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-
-.password-wrapper input {
-  padding-right: 45px;
-}
-
-.toggle-password {
-  position: absolute;
-  right: 12px;
-  background: none;
-  border: none;
-  cursor: pointer;
+/* Botón nueva contraseña */
+.change-password-button {
+  display: block;
+  width: 100%;
+  padding: 14px;
+  background: #faf5f0;
   color: #8b5e3c;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 4px;
+  border: 2px solid #a67b5b;
+  border-radius: 12px;
+  font-size: 1.1rem;
+  font-weight: bold;
+  text-decoration: none;
+  text-align: center;
   transition: all 0.3s ease;
-  border-radius: 4px;
+  cursor: pointer;
+  box-sizing: border-box;
 }
 
-.toggle-password:hover {
-  color: #a67b5b;
-  background: rgba(166, 123, 91, 0.1);
-}
-
-.toggle-password:active {
-  transform: scale(0.95);
-}
-
-/* Hint text */
-.hint {
-  font-size: 0.8rem;
-  color: #8b5e3c;
-  margin-top: 6px;
-  margin-bottom: 0;
-  font-style: italic;
+.change-password-button:hover {
+  background: #a67b5b;
+  color: white;
+  transform: translateY(-2px);
 }
 
 /* Botón guardar */
@@ -352,7 +252,8 @@ const guardarCambios = () => {
     padding: 20px;
   }
 
-  .save-button {
+  .save-button,
+  .change-password-button {
     font-size: 1rem;
     padding: 12px;
   }
