@@ -1,6 +1,8 @@
 import { dbModels } from "../models/index.js";
+import bcrypt from "bcryptjs";
 
 const User = dbModels.Users;
+const SALT_ROUNDS = 10;
 
 export const createUser = async (req, res) => {
   try {
@@ -35,11 +37,13 @@ export const createUser = async (req, res) => {
       });
     }
 
+    const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
+
     let newUser = {
       firstName: firstName.trim(),
       lastName: lastName.trim(),
       email: email.toLowerCase().trim(),
-      password: password,
+      password: hashedPassword,
     };
 
     const user = new User(newUser);
@@ -102,7 +106,16 @@ export const updateUser = async (req, res) => {
     user.firstName = firstName || user.firstName;
     user.lastName = lastName || user.lastName;
     user.email = email || user.email;
-    user.password = password || user.password;
+
+    if (password) {
+      if (password.length < 6) {
+        return res.status(400).json({
+          message: "La contraseña debe tener al menos 6 caracteres",
+        });
+      }
+
+      user.password = await bcrypt.hash(password, SALT_ROUNDS);
+    }
 
     await user.save();
 
@@ -144,8 +157,17 @@ export const login = async (req, res) => {
       });
     }
 
-    // Validar contraseña (comparación directa ya que no usas bcrypt)
-    if (user.password !== password) {
+    // Validar contraseña con hash seguro
+    let isValidPassword = await bcrypt.compare(password, user.password);
+
+    // Compatibilidad temporal: migra contraseñas antiguas en texto plano al nuevo hash
+    if (!isValidPassword && user.password === password) {
+      user.password = await bcrypt.hash(password, SALT_ROUNDS);
+      await user.save();
+      isValidPassword = true;
+    }
+
+    if (!isValidPassword) {
       return res.status(401).json({
         message: "Credenciales inválidas",
       });
