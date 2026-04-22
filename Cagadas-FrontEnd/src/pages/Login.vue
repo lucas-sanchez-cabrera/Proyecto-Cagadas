@@ -52,11 +52,13 @@ import { login as loginService } from "../services/UserServices.js";
 
 const router = useRouter();
 
+// Estado local del formulario de acceso
 const username = ref("");
 const password = ref("");
 const errorMessage = ref("");
 const isLoading = ref(false);
 
+// Flujo de login: validar, autenticar, guardar sesion y redirigir
 const login = async () => {
   try {
     errorMessage.value = "";
@@ -102,6 +104,7 @@ const login = async () => {
 </script>
 
 <style scoped>
+/* Contenedor de pantalla completa centrado */
 .login-container {
   height: 100vh;
   display: flex;
@@ -238,5 +241,22 @@ const login = async () => {
 
 .create-account a:hover {
   color: #5a4331;
+}
+
+/* Ajustes visuales exclusivos para escritorio */
+@media (min-width: 1024px) {
+  .login-container {
+    padding: 48px;
+  }
+
+  .login-card {
+    max-width: 520px;
+    padding: 42px;
+    border-radius: 22px;
+  }
+
+  .title {
+    font-size: 2.2rem;
+  }
 }
 </style>

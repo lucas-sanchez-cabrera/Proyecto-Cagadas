@@ -70,6 +70,7 @@ import { updateUser } from "../services/UserServices";
 
 // Datos del usuario
 const user = JSON.parse(localStorage.getItem("user"));
+// Refs directos a inputs (modo no-controlado para evitar problemas de escritura)
 const inputNombre = ref(null);
 const inputApellidos = ref(null);
 const inputCorreo = ref(null);
@@ -96,6 +97,7 @@ const guardarCambios = async () => {
   isLoading.value = true;
 
   try {
+    // Envia solo los campos editables del perfil
     const response = await updateUser(user._id, {
       firstName,
       lastName,
@@ -115,6 +117,7 @@ const guardarCambios = async () => {
 </script>
 
 <style scoped>
+/* Pantalla de ajustes de perfil */
 .settings-container {
   min-height: 100vh;
   background: #f5e9dd;
@@ -256,6 +259,43 @@ const guardarCambios = async () => {
   .change-password-button {
     font-size: 1rem;
     padding: 12px;
+  }
+}
+
+@media (min-width: 768px) {
+  /* En escritorio se separa cabecera y formulario en dos columnas */
+  .settings-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 40px 44px 64px;
+    display: grid;
+    grid-template-columns: minmax(260px, 320px) minmax(0, 1fr);
+    gap: 24px;
+    align-items: start;
+  }
+
+  .header {
+    margin-bottom: 0;
+    position: sticky;
+    top: 24px;
+  }
+
+  .title {
+    font-size: 2rem;
+    line-height: 1.2;
+  }
+
+  .settings-card {
+    padding: 34px;
+    border-radius: 20px;
+  }
+
+  .input-group {
+    margin-bottom: 22px;
+  }
+
+  .save-button {
+    margin-top: 14px;
   }
 }
 </style>

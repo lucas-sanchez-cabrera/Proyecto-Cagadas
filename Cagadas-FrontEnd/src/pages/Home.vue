@@ -1,167 +1,169 @@
 <template>
   <div class="home-container">
-    <!-- Header con botón principal -->
-    <div class="header">
-      <CacaIcon :size="30" />
-      <h1 class="title">Cagadas {{ user.firstName }}</h1>
+    <div class="home-content">
+      <!-- Header con botón principal -->
+      <div class="header">
+        <CacaIcon :size="30" />
+        <h1 class="title">Cagadas {{ user.firstName }}</h1>
+      </div>
+
+      <!-- Botón principal "He Cagado" (con cooldown 10 min) -->
+      <button
+        class="main-button"
+        :class="{ 'main-button--cooldown': cooldownRemaining > 0 }"
+        :disabled="cooldownRemaining > 0"
+        @click="registrarCagada"
+      >
+        <template v-if="cooldownRemaining > 0">
+          ⏱️ Espera {{ cooldownText }}
+        </template>
+        <template v-else> 💩 +1 </template>
+      </button>
+
+      <!-- Sección de gráficas semanales -->
+      <div class="section">
+        <h2 class="section-title">Esta Semana</h2>
+
+        <!-- Gráfica de barras comparativa -->
+        <div class="chart-card">
+          <h3 class="chart-title">Comparación semanal</h3>
+          <Bar
+            v-if="weeklyBarData.labels.length > 0"
+            :data="weeklyBarData"
+            :options="barChartOptions"
+          />
+          <p v-else style="text-align: center; color: #5a4331; padding: 20px">
+            No hay datos para esta semana
+          </p>
+        </div>
+
+        <!-- Gráfica circular de la semana -->
+        <div class="chart-card">
+          <h3 class="chart-title">Total semanal por usuario</h3>
+          <Pie
+            v-if="weeklyPieData.labels.length > 0"
+            :data="weeklyPieData"
+            :options="pieChartOptions"
+          />
+          <p v-else style="text-align: center; color: #5a4331; padding: 20px">
+            No hay datos para esta semana
+          </p>
+        </div>
+
+        <!-- Estadísticas rápidas -->
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-value">{{ totalSemana }}</div>
+            <div class="stat-label">Total de la semana</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">{{ promedioDiario }}</div>
+            <div class="stat-label">Promedio diario</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sección de datos mensuales -->
+      <div class="section">
+        <h2 class="section-title">Este Mes</h2>
+
+        <!-- Gráfica de barras mensual -->
+        <div class="chart-card">
+          <h3 class="chart-title">Comparación mensual</h3>
+          <Bar
+            v-if="monthlyBarData.labels.length > 0"
+            :data="monthlyBarData"
+            :options="barChartOptions"
+          />
+          <p v-else style="text-align: center; color: #5a4331; padding: 20px">
+            No hay datos para este mes
+          </p>
+        </div>
+
+        <!-- Gráfica circular del mes -->
+        <div class="chart-card">
+          <h3 class="chart-title">Total mensual por usuario</h3>
+          <Pie
+            v-if="monthlyPieData.labels.length > 0"
+            :data="monthlyPieData"
+            :options="pieChartOptions"
+          />
+          <p v-else style="text-align: center; color: #5a4331; padding: 20px">
+            No hay datos para este mes
+          </p>
+        </div>
+
+        <!-- Estadísticas rápidas -->
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-value">{{ totalMes }}</div>
+            <div class="stat-label">Total del mes</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">{{ promedioSemanal }}</div>
+            <div class="stat-label">Promedio semanal</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sección de datos anuales -->
+      <div class="section">
+        <h2 class="section-title">Este Año</h2>
+
+        <!-- Gráfica de barras anual -->
+        <div class="chart-card">
+          <h3 class="chart-title">Comparación anual</h3>
+          <Bar
+            v-if="yearlyBarData.labels.length > 0"
+            :data="yearlyBarData"
+            :options="barChartOptions"
+          />
+          <p v-else style="text-align: center; color: #5a4331; padding: 20px">
+            No hay datos para este año
+          </p>
+        </div>
+
+        <!-- Gráfica circular del año -->
+        <div class="chart-card">
+          <h3 class="chart-title">Total anual por usuario</h3>
+          <Pie
+            v-if="yearlyPieData.labels.length > 0"
+            :data="yearlyPieData"
+            :options="pieChartOptions"
+          />
+          <p v-else style="text-align: center; color: #5a4331; padding: 20px">
+            No hay datos para este año
+          </p>
+        </div>
+
+        <!-- Estadísticas rápidas -->
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-value">{{ totalAnio }}</div>
+            <div class="stat-label">Total del año</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">{{ promedioMensual }}</div>
+            <div class="stat-label">Promedio mensual</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="actions-row">
+        <!-- Link a clasificación -->
+        <router-link to="/classification" class="classification-link">
+          🏆 Clasificación
+        </router-link>
+        <!-- Link a configuración -->
+        <router-link to="/user-setting" class="settings-link">
+          ⚙️ Configuración
+        </router-link>
+        <button @click="logOut" class="logout-button">
+          <LogOutIcon :size="20" />
+          <span>Cerrar Sesión</span>
+        </button>
+      </div>
     </div>
-
-    <!-- Botón principal "He Cagado" (con cooldown 10 min) -->
-    <button
-      class="main-button"
-      :class="{ 'main-button--cooldown': cooldownRemaining > 0 }"
-      :disabled="cooldownRemaining > 0"
-      @click="registrarCagada"
-    >
-      <template v-if="cooldownRemaining > 0">
-        ⏱️ Espera {{ cooldownText }}
-      </template>
-      <template v-else>
-        💩 +1
-      </template>
-    </button>
-
-    <!-- Sección de gráficas semanales -->
-    <div class="section">
-      <h2 class="section-title">Esta Semana</h2>
-
-      <!-- Gráfica de barras comparativa -->
-      <div class="chart-card">
-        <h3 class="chart-title">Comparación semanal</h3>
-        <Bar
-          v-if="weeklyBarData.labels.length > 0"
-          :data="weeklyBarData"
-          :options="barChartOptions"
-        />
-        <p v-else style="text-align: center; color: #5a4331; padding: 20px">
-          No hay datos para esta semana
-        </p>
-      </div>
-
-      <!-- Gráfica circular de la semana -->
-      <div class="chart-card">
-        <h3 class="chart-title">Total semanal por usuario</h3>
-        <Pie
-          v-if="weeklyPieData.labels.length > 0"
-          :data="weeklyPieData"
-          :options="pieChartOptions"
-        />
-        <p v-else style="text-align: center; color: #5a4331; padding: 20px">
-          No hay datos para esta semana
-        </p>
-      </div>
-
-      <!-- Estadísticas rápidas -->
-      <div class="stats-grid">
-        <div class="stat-card">
-          <div class="stat-value">{{ totalSemana }}</div>
-          <div class="stat-label">Total de la semana</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-value">{{ promedioDiario }}</div>
-          <div class="stat-label">Promedio diario</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Sección de datos mensuales -->
-    <div class="section">
-      <h2 class="section-title">Este Mes</h2>
-
-      <!-- Gráfica de barras mensual -->
-      <div class="chart-card">
-        <h3 class="chart-title">Comparación mensual</h3>
-        <Bar
-          v-if="monthlyBarData.labels.length > 0"
-          :data="monthlyBarData"
-          :options="barChartOptions"
-        />
-        <p v-else style="text-align: center; color: #5a4331; padding: 20px">
-          No hay datos para este mes
-        </p>
-      </div>
-
-      <!-- Gráfica circular del mes -->
-      <div class="chart-card">
-        <h3 class="chart-title">Total mensual por usuario</h3>
-        <Pie
-          v-if="monthlyPieData.labels.length > 0"
-          :data="monthlyPieData"
-          :options="pieChartOptions"
-        />
-        <p v-else style="text-align: center; color: #5a4331; padding: 20px">
-          No hay datos para este mes
-        </p>
-      </div>
-
-      <!-- Estadísticas rápidas -->
-      <div class="stats-grid">
-        <div class="stat-card">
-          <div class="stat-value">{{ totalMes }}</div>
-          <div class="stat-label">Total del mes</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-value">{{ promedioSemanal }}</div>
-          <div class="stat-label">Promedio semanal</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Sección de datos anuales -->
-    <div class="section">
-      <h2 class="section-title">Este Año</h2>
-
-      <!-- Gráfica de barras anual -->
-      <div class="chart-card">
-        <h3 class="chart-title">Comparación anual</h3>
-        <Bar
-          v-if="yearlyBarData.labels.length > 0"
-          :data="yearlyBarData"
-          :options="barChartOptions"
-        />
-        <p v-else style="text-align: center; color: #5a4331; padding: 20px">
-          No hay datos para este año
-        </p>
-      </div>
-
-      <!-- Gráfica circular del año -->
-      <div class="chart-card">
-        <h3 class="chart-title">Total anual por usuario</h3>
-        <Pie
-          v-if="yearlyPieData.labels.length > 0"
-          :data="yearlyPieData"
-          :options="pieChartOptions"
-        />
-        <p v-else style="text-align: center; color: #5a4331; padding: 20px">
-          No hay datos para este año
-        </p>
-      </div>
-
-      <!-- Estadísticas rápidas -->
-      <div class="stats-grid">
-        <div class="stat-card">
-          <div class="stat-value">{{ totalAnio }}</div>
-          <div class="stat-label">Total del año</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-value">{{ promedioMensual }}</div>
-          <div class="stat-label">Promedio mensual</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Link a clasificación -->
-    <router-link to="/classification" class="classification-link">
-      🏆 Clasificación
-    </router-link>
-    <!-- Link a configuración -->
-    <router-link to="/user-setting" class="settings-link">
-      ⚙️ Configuración
-    </router-link>
-    <button @click="logOut" class="logout-button">
-      <LogOutIcon :size="20" />
-      <span>Cerrar Sesión</span>
-    </button>
   </div>
 </template>
 
@@ -229,7 +231,10 @@ function updateCooldownRemaining() {
 }
 
 function setCooldown(isoDateOrMs) {
-  const end = typeof isoDateOrMs === "string" ? new Date(isoDateOrMs).getTime() : isoDateOrMs;
+  const end =
+    typeof isoDateOrMs === "string"
+      ? new Date(isoDateOrMs).getTime()
+      : isoDateOrMs;
   if (end <= Date.now()) return;
   cooldownEndsAt.value = end;
   cooldownRemaining.value = Math.ceil((end - Date.now()) / 1000);
@@ -249,7 +254,7 @@ ChartJS.register(
   BarElement,
   CategoryScale,
   LinearScale,
-  ArcElement
+  ArcElement,
 );
 
 // Colores para las gráficas
@@ -463,7 +468,17 @@ const loadWeekData = async () => {
         })),
       };
     } else {
-      weeklyPieData.value = { labels: [], datasets: [{ data: [], backgroundColor: [], borderColor: "#fffdfb", borderWidth: 3 }] };
+      weeklyPieData.value = {
+        labels: [],
+        datasets: [
+          {
+            data: [],
+            backgroundColor: [],
+            borderColor: "#fffdfb",
+            borderWidth: 3,
+          },
+        ],
+      };
       weeklyBarData.value = { labels: [], datasets: [] };
     }
   } catch (error) {
@@ -502,7 +517,17 @@ const loadMonthData = async () => {
         })),
       };
     } else {
-      monthlyPieData.value = { labels: [], datasets: [{ data: [], backgroundColor: [], borderColor: "#fffdfb", borderWidth: 3 }] };
+      monthlyPieData.value = {
+        labels: [],
+        datasets: [
+          {
+            data: [],
+            backgroundColor: [],
+            borderColor: "#fffdfb",
+            borderWidth: 3,
+          },
+        ],
+      };
       monthlyBarData.value = { labels: [], datasets: [] };
     }
   } catch (error) {
@@ -519,12 +544,24 @@ const loadYearData = async () => {
 
     if (stats.length > 0) {
       const months = [
-        "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
-        "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre",
+        "Enero",
+        "Febrero",
+        "Marzo",
+        "Abril",
+        "Mayo",
+        "Junio",
+        "Julio",
+        "Agosto",
+        "Septiembre",
+        "Octubre",
+        "Noviembre",
+        "Diciembre",
       ];
       const datasets = stats.map((stat, index) => {
         const monthlyCounts = new Array(12).fill(0);
-        const userPoops = history.filter((poop) => poop.user._id === stat.user._id);
+        const userPoops = history.filter(
+          (poop) => poop.user._id === stat.user._id,
+        );
         userPoops.forEach((poop) => {
           const monthIndex = new Date(poop.date).getMonth();
           monthlyCounts[monthIndex]++;
@@ -541,16 +578,28 @@ const loadYearData = async () => {
 
       yearlyPieData.value = {
         labels: stats.map((stat) => `${stat.user.firstName}`),
-        datasets: [{
-          data: stats.map((stat) => stat.count),
-          backgroundColor: stats.map((_, i) => colors[i % colors.length]),
-          borderColor: "#fffdfb",
-          borderWidth: 3,
-        }],
+        datasets: [
+          {
+            data: stats.map((stat) => stat.count),
+            backgroundColor: stats.map((_, i) => colors[i % colors.length]),
+            borderColor: "#fffdfb",
+            borderWidth: 3,
+          },
+        ],
       };
       yearlyBarData.value = { labels: months, datasets };
     } else {
-      yearlyPieData.value = { labels: [], datasets: [{ data: [], backgroundColor: [], borderColor: "#fffdfb", borderWidth: 3 }] };
+      yearlyPieData.value = {
+        labels: [],
+        datasets: [
+          {
+            data: [],
+            backgroundColor: [],
+            borderColor: "#fffdfb",
+            borderWidth: 3,
+          },
+        ],
+      };
       yearlyBarData.value = { labels: [], datasets: [] };
     }
   } catch (error) {
@@ -560,7 +609,7 @@ const loadYearData = async () => {
 
 const logOut = () => {
   localStorage.removeItem("user");
-  localStorage.removeItem("token"); 
+  localStorage.removeItem("token");
   window.location.href = "/login";
 };
 
@@ -613,6 +662,13 @@ onUnmounted(() => {
   background: #f5e9dd;
   padding: 20px;
   padding-bottom: 40px;
+  box-sizing: border-box;
+  display: flex;
+  justify-content: center;
+}
+
+.home-content {
+  width: min(1320px, 100%);
 }
 
 .header {
@@ -825,5 +881,170 @@ onUnmounted(() => {
 
 .logout-button:active {
   transform: translateY(0);
+}
+
+.actions-row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
+/* Layout escritorio: estructura principal centrada y compacta */
+@media (min-width: 768px) {
+  .home-container {
+    padding: 20px 20px 32px;
+  }
+
+  .home-content {
+    width: min(1120px, 100%);
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    column-gap: 12px;
+    align-items: start;
+  }
+
+  .header {
+    grid-column: 1 / -1;
+    justify-content: center;
+    margin-bottom: 12px;
+    width: 100%;
+  }
+
+  .title {
+    font-size: 2rem;
+  }
+
+  .main-button {
+    grid-column: 1 / -1;
+    width: min(320px, 100%);
+    padding: 14px;
+    font-size: 1.1rem;
+    margin-bottom: 14px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .section {
+    grid-column: 1 / -1;
+    display: grid;
+    /* Dos graficas por fila en desktop */
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    margin-bottom: 16px;
+    width: 100%;
+  }
+
+  .section-title {
+    grid-column: 1 / -1;
+    font-size: 1.35rem;
+    margin-bottom: 0;
+  }
+
+  .chart-card {
+    padding: 14px;
+    margin-bottom: 0;
+    min-height: 250px;
+  }
+
+  .chart-title {
+    font-size: 1rem;
+    margin-bottom: 10px;
+  }
+
+  .classification-link,
+  .settings-link,
+  .logout-button {
+    margin: 0;
+  }
+
+  .classification-link {
+    margin-top: 0;
+  }
+
+  .classification-link,
+  .settings-link,
+  .logout-button {
+    padding: 8px 10px;
+    font-size: 0.88rem;
+    min-height: 36px;
+    line-height: 1.2;
+    box-sizing: border-box;
+  }
+
+  .classification-link,
+  .settings-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .actions-row {
+    display: grid;
+    margin-top: 20px;
+    grid-column: 1 / -1;
+    /* Fila de acciones: clasificacion, configuracion y logout */
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+    align-items: stretch;
+  }
+
+  .logout-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 0;
+    gap: 6px;
+  }
+
+  .logout-button :deep(svg) {
+    width: 14px;
+    height: 14px;
+  }
+
+  .stats-grid {
+    grid-column: 1 / -1;
+    /* Totales/promedios centrados debajo de las graficas */
+    grid-template-columns: repeat(2, minmax(190px, 1fr));
+    width: min(520px, 100%);
+    max-width: 520px;
+    gap: 10px;
+    margin-top: 0;
+    margin-left: auto;
+    margin-right: auto;
+    justify-self: center;
+  }
+
+  .stat-card {
+    padding: 10px;
+  }
+
+  .stat-value {
+    font-size: 1.5rem;
+    margin-bottom: 2px;
+  }
+
+  .stat-label {
+    font-size: 0.78rem;
+  }
+
+  :deep(canvas) {
+    max-height: 185px !important;
+  }
+}
+
+@media (min-width: 1024px) {
+  /* En pantallas grandes, las stats se alinean al ancho de la seccion */
+  .stats-grid {
+    width: 100%;
+    max-width: none;
+    margin-left: 0;
+    margin-right: 0;
+    justify-self: stretch;
+  }
+
+  .stat-card {
+    width: min(260px, 100%);
+    justify-self: center;
+  }
 }
 </style>

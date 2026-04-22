@@ -73,12 +73,14 @@ import CacaIcon from "../icons/CacaIcon.vue";
 import { register } from "../services/UserServices";
 
 const router = useRouter();
+// Estado local del formulario de registro
 const firstName = ref("");
 const lastName = ref("");
 const email = ref("");
 const password = ref("");
 const isLoading = ref(false);
 
+// Flujo de registro: crear usuario y volver al login
 const handleRegister = async () => {
   isLoading.value = true;
 
@@ -245,6 +247,23 @@ const handleRegister = async () => {
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+/* Escala mayor para pantallas de escritorio */
+@media (min-width: 1024px) {
+  .login-container {
+    padding: 48px;
+  }
+
+  .login-card {
+    max-width: 580px;
+    padding: 42px;
+    border-radius: 22px;
+  }
+
+  .title {
+    font-size: 2.2rem;
   }
 }
 </style>

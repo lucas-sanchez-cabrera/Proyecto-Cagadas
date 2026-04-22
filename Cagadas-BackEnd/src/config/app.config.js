@@ -4,10 +4,17 @@ import morgan from "morgan";
 import { configureRoutes } from "../routes/index.js";
 
 const app = express();
+const frontendUrls = (
+  process.env.FRONTEND_URLS ||
+  "http://localhost:5173,http://127.0.0.1:5173"
+)
+  .split(",")
+  .map((url) => url.trim())
+  .filter(Boolean);
 
 const corsOptions = {
-  origin: ["http://localhost:5173", "http://192.168.1.97:5173"], // Frontend URL
-  credentials: true, // Allow credentials (cookies, authorization headers, etc.)
+  origin: frontendUrls,
+  credentials: true,
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
   allowedHeaders: ["Content-Type", "Authorization"],
 };

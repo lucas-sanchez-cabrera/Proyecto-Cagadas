@@ -63,12 +63,14 @@ import { login, updateUser } from "../services/UserServices";
 const router = useRouter();
 const user = JSON.parse(localStorage.getItem("user"));
 
+// Estado del formulario de cambio de contraseña
 const contraseñaActual = ref("");
 const contraseñaNueva = ref("");
 const contraseñaRepetida = ref("");
 const isLoading = ref(false);
 const errorMessage = ref("");
 
+// Flujo: validar datos, verificar contraseña actual y guardar la nueva
 const cambiarContraseña = async () => {
   errorMessage.value = "";
 
@@ -90,6 +92,7 @@ const cambiarContraseña = async () => {
   isLoading.value = true;
 
   try {
+    // Reautenticacion: evita cambiar contraseña con sesion desactualizada
     await login({ email: user.email, password: contraseñaActual.value });
   } catch (err) {
     isLoading.value = false;
@@ -99,6 +102,7 @@ const cambiarContraseña = async () => {
   }
 
   try {
+    // Actualiza solo el campo password del usuario actual
     await updateUser(user._id, { password: contraseñaNueva.value });
     alert("Contraseña cambiada correctamente.");
     router.push("/user-setting");
@@ -112,6 +116,7 @@ const cambiarContraseña = async () => {
 </script>
 
 <style scoped>
+/* Pantalla para actualizar credenciales del usuario */
 .settings-container {
   min-height: 100vh;
   background: #f5e9dd;
@@ -221,5 +226,47 @@ const cambiarContraseña = async () => {
 .save-button:disabled {
   opacity: 0.7;
   cursor: not-allowed;
+}
+
+@media (min-width: 768px) {
+  /* Layout de escritorio: cabecera lateral + formulario principal */
+  .settings-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 40px 44px 64px;
+    display: grid;
+    grid-template-columns: minmax(260px, 320px) minmax(0, 1fr);
+    gap: 24px;
+    align-items: start;
+  }
+
+  .header {
+    margin-bottom: 0;
+    position: sticky;
+    top: 24px;
+  }
+
+  .title {
+    font-size: 2rem;
+    line-height: 1.2;
+  }
+
+  .settings-card {
+    padding: 34px;
+    border-radius: 20px;
+  }
+
+  .info-text {
+    font-size: 1rem;
+    margin-bottom: 24px;
+  }
+
+  .input-group {
+    margin-bottom: 22px;
+  }
+
+  .save-button {
+    margin-top: 14px;
+  }
 }
 </style>

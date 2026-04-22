@@ -51,6 +51,33 @@ Sigue estos pasos para instalar y ejecutar el proyecto localmente utilizando Git
 
     El frontend estará disponible en la URL que indique la terminal (por ejemplo, `http://localhost:5173`).
 
+## Ejecucion con Docker
+
+Tambien puedes levantar Frontend + Backend + MongoDB con Docker Compose.
+
+### Prerrequisitos
+
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/)
+
+### Pasos
+
+1. Desde la raiz del proyecto, construir y levantar contenedores:
+
+   ```bash
+   docker compose up --build
+   ```
+
+2. Acceder a las aplicaciones:
+   - Frontend: `http://localhost:5173`
+   - Backend: `http://localhost:3000`
+   - MongoDB: `mongodb://localhost:27017/cagadas`
+
+3. Para detener todo:
+
+   ```bash
+   docker compose down
+   ```
+
 ## Tecnologías
 
 - **Frontend**: Vue.js, Vite

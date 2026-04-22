@@ -78,10 +78,12 @@
 import { ref, computed, onMounted } from "vue";
 import { getYearAllPoops, getClassificationPoints } from "../services/PoopServices";
 
+// Datos de clasificacion y resumen anual
 const classificationPoints = ref([]);
 const yearStats = ref([]);
 const pointsLimit = ref(5);
 
+// Se muestran 5 o 10 entradas segun el estado del boton
 const displayedPoints = computed(() => {
   return classificationPoints.value.slice(0, pointsLimit.value);
 });
@@ -97,6 +99,7 @@ function showMore() {
   pointsLimit.value = pointsLimit.value === 5 ? 10 : 5;
 }
 
+// Carga paralela para reducir espera de la pantalla
 async function loadData() {
   try {
     const [pointsRes, yearRes] = await Promise.all([
@@ -114,6 +117,7 @@ onMounted(loadData);
 </script>
 
 <style scoped>
+/* Vista de clasificacion con dos bloques: ranking y tabla anual */
 .classification-container {
   min-height: 100vh;
   background: #f5e9dd;
@@ -295,5 +299,61 @@ onMounted(loadData);
   color: #5a4331;
   padding: 20px;
   margin: 0;
+}
+
+/* Layout mas amplio y distribuido en escritorio */
+@media (min-width: 768px) {
+  .classification-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 32px 40px 56px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+    gap: 22px;
+  }
+
+  .header {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 0;
+    padding: 8px 0;
+  }
+
+  .title {
+    font-size: 2.1rem;
+    margin-bottom: 0;
+  }
+
+  .section {
+    margin-bottom: 0;
+  }
+
+  .section-title {
+    font-size: 1.5rem;
+    margin-bottom: 10px;
+  }
+
+  .section-desc {
+    font-size: 0.98rem;
+    margin-bottom: 16px;
+  }
+
+  .ranking-card,
+  .table-card {
+    padding: 24px;
+    border-radius: 18px;
+    min-height: 520px;
+  }
+
+  .poops-table {
+    font-size: 1rem;
+  }
+
+  .ranking-item {
+    padding: 14px 2px;
+  }
 }
 </style>
