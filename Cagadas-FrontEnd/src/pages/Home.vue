@@ -813,7 +813,7 @@ onUnmounted(() => {
   color: #5a4331;
   text-decoration: none;
   border-radius: 12px;
-  font-weight: 600;
+  font-weight: 601;
   border: 1px solid #e6d5c3;
   transition: all 0.3s ease;
   margin-top: 12px;
