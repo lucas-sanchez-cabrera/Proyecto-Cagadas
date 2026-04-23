@@ -229,29 +229,30 @@ const cambiarContraseña = async () => {
 }
 
 @media (min-width: 768px) {
-  /* Layout de escritorio: cabecera lateral + formulario principal */
+  /* Layout de escritorio: columna centrada y ancho completo */
   .settings-container {
-    max-width: 1200px;
+    width: 100%;
+    max-width: none;
     margin: 0 auto;
-    padding: 40px 44px 64px;
-    display: grid;
-    grid-template-columns: minmax(260px, 320px) minmax(0, 1fr);
-    gap: 24px;
-    align-items: start;
+    padding: 48px 32px 72px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
   }
 
   .header {
-    margin-bottom: 0;
-    position: sticky;
-    top: 24px;
+    width: min(640px, 100%);
+    margin-bottom: 22px;
   }
 
   .title {
     font-size: 2rem;
     line-height: 1.2;
+    margin-top: 4px;
   }
 
   .settings-card {
+    width: min(640px, 100%);
     padding: 34px;
     border-radius: 20px;
   }

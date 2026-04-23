@@ -126,14 +126,15 @@ const handleRegister = async () => {
 <style scoped>
 /* Reutilizando estilos de Login.vue para consistencia */
 .login-container {
-  height: 100vh;
+  min-height: 100vh;
   display: flex;
   justify-content: center;
   align-items: center;
   margin: 0;
   padding: 20px;
   background: #f5e9dd;
-  overflow: hidden;
+  overflow: auto;
+  box-sizing: border-box;
 }
 
 .login-card {
@@ -253,7 +254,10 @@ const handleRegister = async () => {
 /* Escala mayor para pantallas de escritorio */
 @media (min-width: 1024px) {
   .login-container {
+    min-height: 100vh;
     padding: 48px;
+    justify-content: center;
+    align-items: center;
   }
 
   .login-card {

@@ -1,17 +1,23 @@
 <template>
   <div class="classification-container">
     <header class="header">
+      <router-link to="/home" class="back-link">← Volver</router-link>
       <h1 class="title">🏆 Clasificación</h1>
-      <router-link to="/home" class="back-link">← Volver al inicio</router-link>
     </header>
 
     <!-- Clasificación por puntos (victorias semanales del año) -->
     <section class="section">
       <h2 class="section-title">Puntos por victorias semanales</h2>
       <p class="section-desc">
-        Caga mas que el resto y consigue un punto, en caso de quedar empatado, cada uno consigue medio punto.
+        Caga mas que el resto y consigue un punto, en caso de quedar empatado,
+        cada uno consigue medio punto.
       </p>
       <div class="ranking-card">
+        <div v-if="displayedPoints.length > 0" class="ranking-header">
+          <span>Puesto</span>
+          <span>Nombre</span>
+          <span>Puntos</span>
+        </div>
         <ul v-if="displayedPoints.length > 0" class="ranking-list">
           <li
             v-for="(item, index) in displayedPoints"
@@ -24,23 +30,36 @@
             }"
           >
             <span class="position">
-              <span v-if="index === 0" class="medal" aria-hidden="true">🥇</span>
-              <span v-else-if="index === 1" class="medal" aria-hidden="true">🥈</span>
-              <span v-else-if="index === 2" class="medal" aria-hidden="true">🥉</span>
+              <span v-if="index === 0" class="medal" aria-hidden="true"
+                >🥇</span
+              >
+              <span v-else-if="index === 1" class="medal" aria-hidden="true"
+                >🥈</span
+              >
+              <span v-else-if="index === 2" class="medal" aria-hidden="true"
+                >🥉</span
+              >
               <span v-else>{{ positionLabel(index + 1) }}</span>
             </span>
-            <span class="name">{{ item.user.firstName }} {{ item.user.lastName }}</span>
-            <span class="value">{{ item.points }} {{ item.points === 1 ? 'punto' : 'puntos' }}</span>
+            <span class="name"
+              >{{ item.user.firstName }} {{ item.user.lastName }}</span
+            >
+            <span class="value"
+              >{{ item.points }}
+              {{ item.points === 1 ? "punto" : "puntos" }}</span
+            >
           </li>
         </ul>
-        <p v-else class="empty-message">Aún no hay datos para la clasificación por puntos.</p>
+        <p v-else class="empty-message">
+          Aún no hay datos para la clasificación por puntos.
+        </p>
         <button
           v-if="showMoreVisible"
           type="button"
           class="show-more-btn"
           @click="showMore"
         >
-          {{ pointsLimit === 5 ? 'Mostrar más' : 'Mostrar menos' }}-
+          {{ pointsLimit === 5 ? "Mostrar más" : "Mostrar menos" }}-
         </button>
       </div>
     </section>
@@ -76,7 +95,10 @@
 
 <script setup>
 import { ref, computed, onMounted } from "vue";
-import { getYearAllPoops, getClassificationPoints } from "../services/PoopServices";
+import {
+  getYearAllPoops,
+  getClassificationPoints,
+} from "../services/PoopServices";
 
 // Datos de clasificacion y resumen anual
 const classificationPoints = ref([]);
@@ -91,7 +113,18 @@ const displayedPoints = computed(() => {
 const showMoreVisible = computed(() => classificationPoints.value.length > 5);
 
 function positionLabel(position) {
-  const ordinals = ["1º", "2º", "3º", "4º", "5º", "6º", "7º", "8º", "9º", "10º"];
+  const ordinals = [
+    "1º",
+    "2º",
+    "3º",
+    "4º",
+    "5º",
+    "6º",
+    "7º",
+    "8º",
+    "9º",
+    "10º",
+  ];
   return ordinals[position - 1] || `${position}º`;
 }
 
@@ -121,18 +154,22 @@ onMounted(loadData);
 .classification-container {
   min-height: 100vh;
   background: #f5e9dd;
-  padding: 20px;
-  padding-bottom: 40px;
+  padding: 18px 14px 32px;
+  box-sizing: border-box;
 }
 
 .header {
-  margin-bottom: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 18px;
 }
 
 .title {
   font-size: 1.8rem;
   color: #8b5e3c;
-  margin: 0 0 12px 0;
+  margin: 0;
   font-weight: bold;
 }
 
@@ -141,6 +178,7 @@ onMounted(loadData);
   text-decoration: none;
   font-weight: 600;
   font-size: 0.95rem;
+  margin: 0;
 }
 
 .back-link:hover {
@@ -148,7 +186,7 @@ onMounted(loadData);
 }
 
 .section {
-  margin-bottom: 28px;
+  margin-bottom: 18px;
 }
 
 .section-title {
@@ -168,7 +206,7 @@ onMounted(loadData);
 .ranking-card,
 .table-card {
   background: #fffdfb;
-  padding: 20px;
+  padding: 14px;
   border-radius: 16px;
   box-shadow: rgba(60, 40, 20, 0.15) 0px 4px 12px;
   border: 1px solid #e6d5c3;
@@ -180,13 +218,32 @@ onMounted(loadData);
   padding: 0;
 }
 
+.ranking-header {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  padding: 0 0 10px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid #e6d5c3;
+  color: #5a4331;
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.ranking-header span:last-child {
+  text-align: right;
+}
+
 .ranking-item {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 12px 0;
+  gap: 8px;
+  padding: 10px 0;
   border-bottom: 1px solid #e6d5c3;
-  font-size: 1rem;
+  font-size: 0.92rem;
 }
 
 .ranking-item:last-child {
@@ -194,7 +251,11 @@ onMounted(loadData);
 }
 
 .ranking-item--gold {
-  background: linear-gradient(90deg, rgba(255, 215, 0, 0.4) 0%, rgba(255, 223, 128, 0.25) 100%);
+  background: linear-gradient(
+    90deg,
+    rgba(255, 215, 0, 0.4) 0%,
+    rgba(255, 223, 128, 0.25) 100%
+  );
   border-radius: 10px;
   margin: 2px -12px;
   padding-left: 12px;
@@ -202,7 +263,11 @@ onMounted(loadData);
 }
 
 .ranking-item--silver {
-  background: linear-gradient(90deg, rgba(192, 192, 192, 0.45) 0%, rgba(230, 230, 230, 0.3) 100%);
+  background: linear-gradient(
+    90deg,
+    rgba(192, 192, 192, 0.45) 0%,
+    rgba(230, 230, 230, 0.3) 100%
+  );
   border-radius: 10px;
   margin: 2px -12px;
   padding-left: 12px;
@@ -210,7 +275,11 @@ onMounted(loadData);
 }
 
 .ranking-item--bronze {
-  background: linear-gradient(90deg, rgba(205, 127, 50, 0.45) 0%, rgba(210, 180, 140, 0.3) 100%);
+  background: linear-gradient(
+    90deg,
+    rgba(205, 127, 50, 0.45) 0%,
+    rgba(210, 180, 140, 0.3) 100%
+  );
   border-radius: 10px;
   margin: 2px -12px;
   padding-left: 12px;
@@ -218,22 +287,28 @@ onMounted(loadData);
 }
 
 .position {
-  min-width: 40px;
+  min-width: 34px;
   font-weight: bold;
   color: #5a4331;
-  font-size: 1.1rem;
+  font-size: 1rem;
   display: inline-flex;
   align-items: center;
 }
 
 .position .medal {
-  font-size: 1.4rem;
+  font-size: 1.2rem;
   line-height: 1;
 }
 
-.ranking-item--gold .position { color: #b8860b; }
-.ranking-item--silver .position { color: #6b6b6b; }
-.ranking-item--bronze .position { color: #8b4513; }
+.ranking-item--gold .position {
+  color: #b8860b;
+}
+.ranking-item--silver .position {
+  color: #6b6b6b;
+}
+.ranking-item--bronze .position {
+  color: #8b4513;
+}
 
 .name {
   flex: 1;
@@ -249,8 +324,8 @@ onMounted(loadData);
 .show-more-btn {
   display: block;
   width: 100%;
-  margin-top: 16px;
-  padding: 10px 16px;
+  margin-top: 12px;
+  padding: 10px 14px;
   background: #e6d5c3;
   color: #5a4331;
   border: 1px solid #c8b29a;
@@ -258,7 +333,9 @@ onMounted(loadData);
   font-weight: 600;
   font-size: 0.95rem;
   cursor: pointer;
-  transition: background 0.2s, transform 0.2s;
+  transition:
+    background 0.2s,
+    transform 0.2s;
 }
 
 .show-more-btn:hover {
@@ -274,12 +351,12 @@ onMounted(loadData);
 .poops-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.95rem;
+  font-size: 0.88rem;
 }
 
 .poops-table th,
 .poops-table td {
-  padding: 12px 16px;
+  padding: 10px 8px;
   text-align: left;
   border-bottom: 1px solid #e6d5c3;
 }
@@ -304,22 +381,34 @@ onMounted(loadData);
 /* Layout mas amplio y distribuido en escritorio */
 @media (min-width: 768px) {
   .classification-container {
-    max-width: 1400px;
+    width: 100%;
+    max-width: none;
     margin: 0 auto;
-    padding: 32px 40px 56px;
+    padding: 28px 20px 48px;
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
-    gap: 22px;
+    grid-template-columns: repeat(2, minmax(0, 480px));
+    grid-template-rows: auto 1fr;
+    column-gap: 20px;
+    row-gap: 10px;
+    align-items: start;
+    justify-content: center;
+    box-sizing: border-box;
   }
 
   .header {
+    margin-left: 20px;
     grid-column: 1 / -1;
+    grid-row: 1 / 2;
     display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 16px;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-start;
+    gap: 6px;
     margin-bottom: 0;
-    padding: 8px 0;
+    padding: 6px 0 10px;
+    text-align: right;
+    justify-self: stretch;
+    width: auto;
   }
 
   .title {
@@ -327,33 +416,66 @@ onMounted(loadData);
     margin-bottom: 0;
   }
 
+  .back-link {
+    order: -1;
+  }
+
   .section {
     margin-bottom: 0;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .section:nth-of-type(1) {
+    grid-column: 1 / 2;
+    grid-row: 2 / 3;
+  }
+
+  .section:nth-of-type(2) {
+    grid-column: 2 / 3;
+    grid-row: 2 / 3;
   }
 
   .section-title {
-    font-size: 1.5rem;
-    margin-bottom: 10px;
+    font-size: 1.35rem;
+    margin-bottom: 8px;
   }
 
   .section-desc {
-    font-size: 0.98rem;
-    margin-bottom: 16px;
+    font-size: 0.92rem;
+    margin-bottom: 12px;
+    min-height: 40px;
   }
 
   .ranking-card,
   .table-card {
-    padding: 24px;
-    border-radius: 18px;
-    min-height: 520px;
+    flex: 1;
+    padding: 18px;
+    border-radius: 16px;
+    min-height: 440px;
+    min-width: 0;
   }
 
   .poops-table {
-    font-size: 1rem;
+    font-size: 0.92rem;
+    table-layout: fixed;
+  }
+
+  .poops-table th,
+  .poops-table td {
+    padding: 10px 12px;
+    word-break: break-word;
   }
 
   .ranking-item {
-    padding: 14px 2px;
+    padding: 10px 2px;
+    font-size: 0.94rem;
+  }
+
+  .ranking-header {
+    grid-template-columns: 60px minmax(0, 1fr) auto;
+    font-size: 0.86rem;
   }
 }
 </style>
